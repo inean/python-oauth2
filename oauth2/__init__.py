@@ -290,10 +290,10 @@ class Token(object):
         if self.callback_confirmed is not None:
             data['oauth_callback_confirmed'] = self.callback_confirmed
 
-        # Token expiration
-        if self.session_handle is not None:
+        # Token expiration. Only send session_handle is server has set
+        # a proper expires_in value (integer > 0)
+        if self.session_handle is not None and self.expires_in:
             data['oauth_session_handle'] = self.session_handle
-        if self.expires_in is not None:
             data['expiresIn'] = self.expires_in
             
         return urllib.urlencode(data)
