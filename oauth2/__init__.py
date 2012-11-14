@@ -171,6 +171,11 @@ def generate_verifier(length=8):
     return ''.join([str(random.randint(0, 9)) for i in range(length)])
 
 
+def generate_session_handle(length=10):
+    """Generate pseudorandom number."""
+    return ''.join([str(random.randint(0, 9)) for i in range(length)])
+
+
 class Consumer(object):
     """A consumer of OAuth-protected services.
  
@@ -228,6 +233,8 @@ class Token(object):
     callback = None
     callback_confirmed = None
     verifier = None
+    session_handle = None
+    expires_in = None
 
     def __init__(self, key, secret):
         self.key = key
@@ -246,6 +253,15 @@ class Token(object):
         else:
             self.verifier = generate_verifier()
 
+    def set_session_handle(self, handle=None):
+        if handle is not None:
+            self.session_handle = handle
+        else:
+            self.session_handle = generate_session_handle()
+
+    def set_expires_in(self, expires):
+        self.expires_in = expires
+        
     def get_callback_url(self):
         if self.callback and self.verifier:
             # Append the oauth_verifier.
@@ -273,6 +289,13 @@ class Token(object):
 
         if self.callback_confirmed is not None:
             data['oauth_callback_confirmed'] = self.callback_confirmed
+
+        # Token expiration
+        if self.session_handle is not None:
+            data['oauth_session_handle'] = self.session_handle
+        if self.expires_in is not None:
+            data['expiresIn'] = self.expires_in
+            
         return urllib.urlencode(data)
  
     @staticmethod
