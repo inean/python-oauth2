@@ -52,7 +52,7 @@ __version__ = _version.__version__
 OAUTH_VERSION = '1.0'  # Hi Blaine!
 HTTP_METHOD = 'GET'
 SIGNATURE_METHOD = 'PLAINTEXT'
-
+READ_BUFFER_CHUNK_SIZE = 128 * 1024
 
 class Error(RuntimeError):
     """Generic exception class."""
@@ -513,7 +513,26 @@ class Request(dict):
             # section 4.1.1 "OAuth Consumers MUST NOT include an
             # oauth_body_hash parameter on requests with form-encoded
             # request bodies."
-            self['oauth_body_hash'] = base64.b64encode(sha(self.body).digest())
+
+            hsh = sha()
+            #pylint: disable-msg=E1103
+            if self.body and hasattr(self.body, 'tell'):
+                # remenber current pos
+                curpos = self.body.tell()
+                while(True):
+                    # read chunks (128Kb)
+                    chunk = self.body.read(READ_BUFFER_CHUNK_SIZE)
+                    if chunk == '':
+                        break
+                    # update hash
+                    hsh.update(chunk)
+                # reset seek
+                self.body.seek(curpos)
+            else:
+                # default implementation
+                hsh.update(self.body)
+                    
+            self['oauth_body_hash'] = base64.b64encode(hsh.digest())
 
         if 'oauth_consumer_key' not in self:
             self['oauth_consumer_key'] = consumer.key
